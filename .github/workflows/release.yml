@@ -87,7 +87,7 @@ jobs:
           else
             EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"}]'
           fi
-          echo "matrix=$(echo $MATRIX | jq -c --argjson exclude "$EXCLUDE" '. + {exclude: $exclude}'" >> $GITHUB_OUTPUT
+          echo "matrix=$(echo $MATRIX | jq -c --argjson exclude "$EXCLUDE" '. + {exclude: $exclude}')" >> $GITHUB_OUTPUT
 
   ui-test:
     needs: setup_ui_tests_matrix
