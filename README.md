@@ -6,3 +6,6 @@ Hello world!
 
 # Test merge group
 hahahaha
+
+# Checks
+Reprot status in CI
