@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
 
-  job-1:
+  ui-tests:
     name: Test
     runs-on: ubuntu-latest
     permissions:
@@ -69,6 +69,6 @@ jobs:
               sha: context.sha,
               state: status,
               context: 'job-1',
-              description: description,
+              description: ${description},
               target_url: '${{ steps.job-1.outputs.url }}'
             })
