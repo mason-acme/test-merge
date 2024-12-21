@@ -55,7 +55,7 @@ jobs:
       - name: "Setup matrix"
         id: setup-matrix
         run: |
-          IDE_VERSION='["2024.2","2024.3"]'
+          IDE_VERSION='["242","243"]'
           OS='["ubuntu-latest", "windows-latest", "macos-latest"]'
 
           echo "matrix=$(jq -n -c \
@@ -77,13 +77,13 @@ jobs:
     steps:
       # Exclude all github-hosted runners and add 1ES runners
       # When it's pull request, exclude the latest version but one here to save time
-      # In PR, only run 2024.2, In merge group run both.
+      # In PR, only run 242, In merge group run both.
       - name: "Setup Ui matrix"
         id: setup-matrix
         run: |
           MATRIX='${{ needs.setup_matrix.outputs.matrix }}'
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"},{"ide_version": "2024.3"}]'
+            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"},{"ide_version": "243"}]'
           else
             EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"}]'
           fi
@@ -107,11 +107,11 @@ jobs:
       - name: "Run tests"
         shell: bash
         run: |
-          # exit if matrix.ide_version is 2024.3
-          if [[ "${{ matrix.ide_version }}" == "2024.3" ]]; then
-              echo "Fail on purpose for 2024.3"
+          # exit if matrix.ide_version is 243
+          if [[ "${{ matrix.ide_version }}" == "243" ]]; then
+              echo "Fail on purpose for 243"
               exit 1
           fi
-          echo "Start to run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
+          echo "Start to run test for ${{ matrix.os }} ${{ matrix.ide_version }}."
           sleep(3)
           echo "Run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
