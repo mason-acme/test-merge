@@ -1,0 +1,117 @@
+name: Build JetBrains Plugin
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_type:
+        description: 'Put `nightly` to trigger an extra, ad-hoc release of the nightly version of the extension.'
+        required: false
+        default: ''
+      gradle_test_args:
+        description: 'Additional command-line arguments passed to gradle test commands. Make sure to reference a test task, e.g. :test.'
+        required: false
+        default: ''
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - 'main'
+  merge_group:
+  schedule:
+    - cron: '0 1 * * *' # Once per day at 1am UTC
+  release:
+    types: [ released ]
+
+env:
+  ENABLE_ULTIMATE: ${{ github.event_name == 'release' || github.ref == 'refs/heads/main' }}
+  ORG_GRADLE_JVMARGS: "-Xmx2g -XX:MaxPermSize=1g -Dfile.encoding=UTF-8"
+  GRADLE_TEST_ARGS: ${{ github.event.inputs.gradle_test_args }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+
+  setup_env:
+    name: Setup Env
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set env
+        id: set_env
+        run: |
+          echo "placeholder='no env to be set'" >> $GITHUB_OUTPUT
+    outputs:
+      placeholder: ${{ steps.set_env.outputs.placeholder }}
+
+  setup_matrix:
+    name: Setup Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup-matrix.outputs.matrix }}
+    steps:
+      # reduce duplicated tests in different events and ensure all events can cover all ide versions without overlay.
+      - name: "Setup matrix"
+        id: setup-matrix
+        run: |
+          IDE_VERSION='["2024.2","2024.3"]'
+          OS='["ubuntu-latest", "windows-latest", "macos-latest"]'
+
+          echo "matrix=$(jq -n -c \
+            --argjson os "$OS" \
+            --argjson ide_version "$IDE_VERSION" \
+            '{
+              "os": $os,
+              "ide_version": $ide_version,
+              "variant": ["agent (binary)"]
+            }'
+          )" >> $GITHUB_OUTPUT
+
+  setup_ui_tests_matrix:
+    name: Setup Ui tests matrix
+    needs: setup_matrix
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.setup-matrix.outputs.matrix }}
+    steps:
+      # Exclude all github-hosted runners and add 1ES runners
+      # When it's pull request, exclude the latest version but one here to save time
+      # In PR, only run 2024.2, In merge group run both.
+      - name: "Setup Ui matrix"
+        id: setup-matrix
+        run: |
+          MATRIX='${{ needs.setup_matrix.outputs.matrix }}'
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"},{"ide_version": "2024.3"}]'
+          else
+            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"}]'
+          fi
+          echo "matrix=$(echo $MATRIX | jq -c --argjson exclude "$EXCLUDE" '. + {exclude: $exclude}'" >> $GITHUB_OUTPUT
+
+  ui-test:
+    needs: setup_ui_tests_matrix
+    name: Ui Test
+    runs-on: ${{ matrix.os }}
+    permissions:
+      checks: write
+      contents: read
+      issues: write # For creating issues when tests fail unexpectedly
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup_ui_tests_matrix.outputs.matrix) }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Run tests"
+        shell: bash
+        run: |
+          # exit if matrix.ide_version is 2024.3
+          if [[ "${{ matrix.ide_version }}" == "2024.3" ]]; then
+              echo "Fail on purpose for 2024.3"
+              exit 1
+          fi
+          echo "Start to run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
+          sleep(3)
+          echo "Run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
