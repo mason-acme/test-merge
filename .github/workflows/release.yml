@@ -49,12 +49,3 @@ jobs:
           echo "Start to run test"
           sleep 3
           echo "Test passed"
-      
-      - name: Set build status
-        if: always()
-        run: |
-          curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-                -H "Content-Type: application/json" \
-                -X POST \
-                -d '{"state": "${{ job.status }}", "context": "My Build Status", "target_url": "https://example.com/build-details"}' \
-                https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}
