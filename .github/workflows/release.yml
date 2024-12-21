@@ -51,6 +51,8 @@ jobs:
           echo "Test passed"
       
       - name: Set build status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: always()
         run: |
           curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
