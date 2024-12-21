@@ -56,9 +56,10 @@ jobs:
 
       - name: Report status check
         if: always()
-        uses: actions/github-script@v4
+        uses: actions/github-script@v7
         with:
           script: |
+            const github = require('@actions/github');
             const status = process.env.status === 'success' ? 'success' : 'failure';
             const description = status === 'success' ? 'Job 1 completed successfully' : 'Job 1 failed';
             github.rest.repos.createCommitStatus({
