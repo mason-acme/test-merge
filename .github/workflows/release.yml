@@ -113,5 +113,5 @@ jobs:
               exit 1
           fi
           echo "Start to run test for ${{ matrix.os }} ${{ matrix.ide_version }}."
-          sleep(3)
+          sleep 3
           echo "Run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
