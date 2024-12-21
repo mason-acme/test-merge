@@ -34,84 +34,16 @@ concurrency:
 
 jobs:
 
-  setup_env:
-    name: Setup Env
+  job-1:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Set env
-        id: set_env
+      - name: Fail on merge queue
         run: |
-          echo "placeholder='no env to be set'" >> $GITHUB_OUTPUT
-    outputs:
-      placeholder: ${{ steps.set_env.outputs.placeholder }}
-
-  setup_matrix:
-    name: Setup Matrix
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.setup-matrix.outputs.matrix }}
-    steps:
-      # reduce duplicated tests in different events and ensure all events can cover all ide versions without overlay.
-      - name: "Setup matrix"
-        id: setup-matrix
-        run: |
-          IDE_VERSION='["242","243"]'
-          OS='["ubuntu-latest", "windows-latest", "macos-latest"]'
-
-          echo "matrix=$(jq -n -c \
-            --argjson os "$OS" \
-            --argjson ide_version "$IDE_VERSION" \
-            '{
-              "os": $os,
-              "ide_version": $ide_version,
-              "variant": ["agent (binary)"]
-            }'
-          )" >> $GITHUB_OUTPUT
-
-  setup_ui_tests_matrix:
-    name: Setup Ui tests matrix
-    needs: setup_matrix
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.setup-matrix.outputs.matrix }}
-    steps:
-      # Exclude all github-hosted runners and add 1ES runners
-      # When it's pull request, exclude the latest version but one here to save time
-      # In PR, only run 242, In merge group run both.
-      - name: "Setup Ui matrix"
-        id: setup-matrix
-        run: |
-          MATRIX='${{ needs.setup_matrix.outputs.matrix }}'
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"},{"ide_version": "243"}]'
-          else
-            EXCLUDE='[{"os": "macos-latest"}, {"os": "windows-latest"}]'
-          fi
-          echo "matrix=$(echo $MATRIX | jq -c --argjson exclude "$EXCLUDE" '. + {exclude: $exclude}')" >> $GITHUB_OUTPUT
-
-  ui-test:
-    needs: setup_ui_tests_matrix
-    name: Ui Test
-    runs-on: ${{ matrix.os }}
-    permissions:
-      checks: write
-      contents: read
-      issues: write # For creating issues when tests fail unexpectedly
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.setup_ui_tests_matrix.outputs.matrix) }}
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: "Run tests"
-        shell: bash
-        run: |
-          # exit if matrix.ide_version is 243
-          if [[ "${{ matrix.ide_version }}" == "243" ]]; then
-              echo "Fail on purpose for 243"
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+              echo "Fail on purpose for non pull request"
               exit 1
           fi
-          echo "Start to run test for ${{ matrix.os }} ${{ matrix.ide_version }}."
+          echo "Start to run test"
           sleep 3
-          echo "Run test for ${{ matrix.os }} ${{ matrix.ide_version }} succeeded."
+          echo "Test passed"
