@@ -35,7 +35,7 @@ concurrency:
 jobs:
 
   ui-tests:
-    name: Test
+    name: UI Tests
     runs-on: ubuntu-latest
     permissions:
       checks: write
