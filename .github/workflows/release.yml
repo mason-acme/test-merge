@@ -39,6 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       checks: write
+      contents: write
     steps:
       - name: Fail on merge queue
         run: |
@@ -58,6 +59,7 @@ jobs:
         if: always()
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const status = process.env.status === 'success' ? 'success' : 'failure';
             const description = status === 'success' ? 'Job 1 completed successfully' : 'Job 1 failed';
